@@ -1,0 +1,160 @@
+---
+title: "Model selection"
+output:
+  pdf_document:
+    fig_caption: yes
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(mgcv)
+library(dplyr)
+library(ggplot2)
+library(dplyr)
+knitr::opts_chunk$set(echo = TRUE, warnging=FALSE, message=FALSE)
+d = readRDS("../data/data_cleaned.rds")
+```
+
+We'll start just fitting a model with just an intercept, and then add in effects of gears, 
+```{r}
+null.model = glm(SEX ~ 1, family = "binomial", data=d)
+gear.model = glm(SEX ~ gear, family = "binomial", data=d)
+```
+
+We can add time in in one of two ways, either as a linear trend or a factor. [Note, we could also use non-linear models, like GAMs, but those give a pretty linear estimate because of small sample sizes]
+
+```{r}
+gearTime.model01 = glm(SEX ~ gear + as.factor(Year), family = "binomial", data=d)
+gearTime.model02 = glm(SEX ~ gear + Year, family = "binomial", data=d)
+```
+
+We can also try a few flavors of GAMs,
+
+```{r}
+gam.model = gam(SEX ~ gear + s(Year), family = "binomial", data=d)
+gam.model.02 = gam(SEX ~ s(Year, by=as.factor(gear)), family = "binomial", data=d)
+```
+
+```{r, echo=FALSE}
+m = matrix(0, 6, 2)
+colnames(m) = c("Model", "AIC")
+m[,1] = c("Null", "Gear", "Gear, time (factor)", 
+  "Gear, time (numeric)", "GAM s(year)", "GAM s(year, gear)")
+m[,2] = round(c(AIC(null.model), AIC(gear.model), 
+  AIC(gearTime.model01), AIC(gearTime.model02), 
+  AIC(gam.model), AIC(gam.model.02)), 2)
+kable(m)
+```
+
+Based on this table (lower AICs = better models) we'd say that the best model includes time as factor, but both that model and the model with the temporal trend are better than the model without time as a predictor. This model also does better than GAM models, with smooth terms (either shared, or by gear). To visualize what the sex ratio looks like, we can look at the output of a GAM. 
+
+Are these changes biologically meaningful? We can make predictions with a new data frame,
+
+```{r, fig.cap="Estimated percent male for PWS herring, for 2 gears sampling in spring (March - April). Estimates shown from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
+
+pred.C = predict(gearTime.model01, newdata = data.frame("Year"=1997:2014, "gear"="C"), 
+  type="response", se.fit=TRUE)
+pred.P = predict(gearTime.model01, newdata = data.frame("Year"=1983:2014, "gear"="P"), 
+  type="response", se.fit=TRUE)
+
+df_C = data.frame("year"=1997:2014, pred = pred.C$fit, low = pred.C$fit - 2*pred.C$se.fit, 
+  hi = pred.C$fit + 2*pred.C$se.fit, gear = "C", stringsAsFactors = FALSE)
+df_P = data.frame("year"=1983:2014, pred = pred.P$fit, low = pred.P$fit - 2*pred.P$se.fit, 
+  hi = pred.P$fit + 2*pred.P$se.fit, gear = "P", stringsAsFactors = FALSE)  
+df = rbind(df_C, df_P)
+
+names(df)[which(names(df)=="gear")] = "Gear"
+df$Gear[which(df$Gear=="C")] = "Cast net"
+df$Gear[which(df$Gear=="P")] = "Purse seine"
+
+g1 = ggplot(df, aes(year, pred, group = Gear)) + 
+  geom_line() + 
+  xlab("Year") + ylab("Predicted proportion of males") + scale_fill_manual(values=c("#043657", "#98c5ea")) + 
+  geom_ribbon(aes(ymin=low, ymax=hi, fill=Gear), alpha=0.8) +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+g1
+
+pdf("../figures/Figure 03.pdf")
+g1
+dev.off()
+
+```
+
+### Year coefficients
+
+The year coefficients from the best model show an interesting pattern of oscillations over time, mostly between odd / even years. Extracting these coefficients,
+
+```{r fig.cap="Estimated year coefficients from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
+df = data.frame("Year"=1984:2014, "Effect"=summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1],
+  "Low" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] - 1*summary(gearTime.model01)$coefficients[-c(1:2),2],
+  "Hi" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] + 1*summary(gearTime.model01)$coefficients[-c(1:2),2])
+
+g1 = ggplot(df, aes(Year, Effect)) + geom_line(color = "darkblue") + geom_point(color = "darkblue") +
+  geom_ribbon(aes(ymin = Low, ymax = Hi), fill="darkblue", alpha=0.3) + 
+  ylab("Effect (+/- 1 SE)") + 
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+  
+g1
+pdf("../figures/SI Figure 03_yearcoefs.pdf")
+g1
+dev.off()
+```
+
+We can also look at these in the raw data, calculating proportions by age and gear. 
+
+```{r fig.cap="Proportion of male herring in raw data, stratified by age. Ages 1, 2, 10, and 11 not shown because of sparse data.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
+g = group_by(d, AGE, gear, Year) %>%
+  summarize(p = length(which(SEX==1))/n(), n = n(), m = length(which(SEX==1))) %>% 
+  filter(n >= 20)
+g = rename(g, Gear = gear)
+g$Gear[which(g$Gear=="C")] = "Cast net"
+g$Gear[which(g$Gear=="P")] = "Purse seine"
+
+gtot = group_by(g, Gear, Year) %>% 
+  summarize(p = sum(m) / sum(n))
+gtot$AGE = "All Ages"
+g$AGE = as.character(g$AGE)
+g = rbind(g, gtot)
+
+g1 = ggplot(g[g$AGE %in% c(seq(3,9), "All Ages"),], aes(Year, p, group=Gear, color=Gear)) + 
+  geom_line() + facet_wrap(~AGE, scale="free_y") + ylab("Proportion male") + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+  scale_color_manual(values=c("#043657", "#98c5ea"))
+
+pdf("../figures/SI Figure 04_rawproportions.pdf")
+g1
+dev.off()
+```
+
+
+```{r echo=FALSE, eval=FALSE}
+pws_hatch = data.frame("Year" = 1983:2014, "HatchRet" = c(4804043,
+5248200,8426571,7210456,18488427,
+11405775,20740704,32748688,30117125,7877459,4855228,
+29613221,14829163,20849647,25904011,25589365,42353882,
+34112659,29808328,20006500,50514818,21166271,50454048,
+21292465,54687153,32611090,27383070,68964279,27640423,
+23878369,75658941,41611461),
+  "WildEsc" = c(15307092,27866302,24321751,7404669,15628835,
+3580072,7046989,15231063,10766782,2418285,3532463,7297728,
+6156249,7269432,5244801,7925572,14003294,10487301,12589343,
+3025531,12659282,8675473,25874686,5537897,14344498,
+3900803,6240186,8134097,16975482,6529904,30710798,4219081))
+
+pws_hatch$total = pws_hatch$WildEsc + pws_hatch$HatchRet
+# What we're really interested in are the relative year effects,
+year_effects = coef(gearTime.model01)[1] + 
+  coef(gearTime.model01)[grep("Year",names(coef(gearTime.model01)))]
+plot(1984:2014, year_effects, type="l")
+
+# plot standardized estimates
+plot(1984:2014, scale(year_effects), type="b", ylim=c(-2.5,3), 
+  xlab="", ylab="logit(Pr[male]) - Cast")
+lines(1984:2014, scale(pws_hatch$HatchRet[-1]), col="red")
+lines(1984:2014, scale(pws_hatch$total[-1]), col="blue")
+legend('topleft', bty='n', c("estimated year effects", "pink hatch ret.", "hatch ret + wild pink esc."),
+  col=c("black","red","blue"),lty=1)
+```
