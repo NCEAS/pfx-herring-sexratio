@@ -53,14 +53,14 @@ Are these changes biologically meaningful? We can make predictions with a new da
 
 ```{r, fig.cap="Estimated percent male for PWS herring, for 2 gears sampling in spring (March - April). Estimates shown from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
 
-pred.C = predict(gearTime.model01, newdata = data.frame("Year"=1997:2014, "gear"="C"), 
+pred.C = predict(gearTime.model01, newdata = data.frame("Year"=1997:2015, "gear"="C"), 
   type="response", se.fit=TRUE)
-pred.P = predict(gearTime.model01, newdata = data.frame("Year"=1983:2014, "gear"="P"), 
+pred.P = predict(gearTime.model01, newdata = data.frame("Year"=1983:2015, "gear"="P"), 
   type="response", se.fit=TRUE)
 
-df_C = data.frame("year"=1997:2014, pred = pred.C$fit, low = pred.C$fit - 2*pred.C$se.fit, 
+df_C = data.frame("year"=1997:2015, pred = pred.C$fit, low = pred.C$fit - 2*pred.C$se.fit, 
   hi = pred.C$fit + 2*pred.C$se.fit, gear = "C", stringsAsFactors = FALSE)
-df_P = data.frame("year"=1983:2014, pred = pred.P$fit, low = pred.P$fit - 2*pred.P$se.fit, 
+df_P = data.frame("year"=1983:2015, pred = pred.P$fit, low = pred.P$fit - 2*pred.P$se.fit, 
   hi = pred.P$fit + 2*pred.P$se.fit, gear = "P", stringsAsFactors = FALSE)  
 df = rbind(df_C, df_P)
 
@@ -87,7 +87,7 @@ dev.off()
 The year coefficients from the best model show an interesting pattern of oscillations over time, mostly between odd / even years. Extracting these coefficients,
 
 ```{r fig.cap="Estimated year coefficients from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
-df = data.frame("Year"=1984:2014, "Effect"=summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1],
+df = data.frame("Year"=1984:2015, "Effect"=summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1],
   "Low" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] - 1*summary(gearTime.model01)$coefficients[-c(1:2),2],
   "Hi" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] + 1*summary(gearTime.model01)$coefficients[-c(1:2),2])
 

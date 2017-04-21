@@ -1,13 +1,14 @@
-d = read.csv("data/df35b.276.1.csv")
+#d = read.csv("data/df35b.276.1.csv")
+d = read.csv("data/HAWL_Data_1973-2016_3-21-2017_Basic.csv")
 
 # delete any of the rows that have values in comment field 
 d = d[-which(d$Comments!="")]
 # restrict months to march-april
 d = d[which(d$Month%in%c(3, 4)),]
 # don't include unsexed animals
-d = d[which(d$SEX%in%c(1,2)),]
+d = d[which(d$Sex%in%c("Female","Male")),]
 # re-label females = 0, males = 1
-d$SEX[d$SEX==2] = 0 # females
+d$SEX = as.numeric(d$Sex) - 2 
 
 # Split out the gear, location, and fishery from the filename code.
 d$FILENAME = as.character(d$FILENAME)
@@ -38,4 +39,4 @@ d = d[d$AGE %in% seq(1,11), ]
 # temporally, we'll restrict the analysis to data from 1983 on. There's samples in 1976/1977, but very small, and the gap may affect the longer term trend.
 d = d[d$Year > 1982,]
 
-saveRDS(d, "data_cleaned.rds")
+saveRDS(d, "data/data_cleaned.rds")
