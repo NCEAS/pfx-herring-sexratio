@@ -82,12 +82,34 @@ dev.off()
 
 ```
 
+### Spatial comparison
+
+One of the things we can do is look for matched sites in the same year and compare purse seine samples for them. After accounting for the variation over years and spatial sampling locations within PWS, the difference between gears is still significant.  
+
+```{r, echo=FALSE, results="hide", warning=FALSE, message = FALSE}
+g = group_by(d, location, Year) %>% 
+  summarize(np = length(which(gear=="P")),
+    nc = length(which(gear == "C"))) %>% 
+  filter(nc > 0 & np > 0)
+g$loc_year = paste(g$location, g$Year)
+d$loc_year = paste(d$location, d$Year)
+library(lme4)
+
+g_spat = glmer(SEX ~ gear + (1|loc_year), family = "binomial", data=d[which(d$loc_year %in% g$loc_year),])
+
+```
+
+```{r, echo=FALSE}
+print(summary(g_spat))
+```
+
+
 ### Year coefficients
 
 The year coefficients from the best model show an interesting pattern of oscillations over time, mostly between odd / even years. Extracting these coefficients,
 
 ```{r fig.cap="Estimated year coefficients from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
-df = data.frame("Year"=1984:2014, "Effect"=summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1],
+df = data.frame("Year"=1984:2015, "Effect"=summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1],
   "Low" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] - 1*summary(gearTime.model01)$coefficients[-c(1:2),2],
   "Hi" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] + 1*summary(gearTime.model01)$coefficients[-c(1:2),2])
 
