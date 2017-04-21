@@ -30,6 +30,8 @@ d$oiled[which(d$location%in%c("CP", "LB", "MB", "RB", "ZB"))] = "N"
 d$fishery[d$fishery%in%c("A", "T", "D")] = "Research"
 d = d[d$fishery%in%c("Research"),] # only research samples
 
+round(table(d$gear) / sum(table(d$gear)), 2)
+
 # look at two dominant gears
 d = d[d$gear%in%c("C", "P"),] # cast, purse seine
 

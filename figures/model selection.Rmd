@@ -53,14 +53,14 @@ Are these changes biologically meaningful? We can make predictions with a new da
 
 ```{r, fig.cap="Estimated percent male for PWS herring, for 2 gears sampling in spring (March - April). Estimates shown from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
 
-pred.C = predict(gearTime.model01, newdata = data.frame("Year"=1997:2014, "gear"="C"), 
+pred.C = predict(gearTime.model01, newdata = data.frame("Year"=1997:2015, "gear"="C"), 
   type="response", se.fit=TRUE)
-pred.P = predict(gearTime.model01, newdata = data.frame("Year"=1983:2014, "gear"="P"), 
+pred.P = predict(gearTime.model01, newdata = data.frame("Year"=1983:2015, "gear"="P"), 
   type="response", se.fit=TRUE)
 
-df_C = data.frame("year"=1997:2014, pred = pred.C$fit, low = pred.C$fit - 2*pred.C$se.fit, 
+df_C = data.frame("year"=1997:2015, pred = pred.C$fit, low = pred.C$fit - 2*pred.C$se.fit, 
   hi = pred.C$fit + 2*pred.C$se.fit, gear = "C", stringsAsFactors = FALSE)
-df_P = data.frame("year"=1983:2014, pred = pred.P$fit, low = pred.P$fit - 2*pred.P$se.fit, 
+df_P = data.frame("year"=1983:2015, pred = pred.P$fit, low = pred.P$fit - 2*pred.P$se.fit, 
   hi = pred.P$fit + 2*pred.P$se.fit, gear = "P", stringsAsFactors = FALSE)  
 df = rbind(df_C, df_P)
 
@@ -81,6 +81,38 @@ g1
 dev.off()
 
 ```
+
+### Correlation with pink salmon
+
+```{r, echo=FALSE, fig.pos="placeHere", fig.cap="Correlation between ln(pink salmon harvest) and predicted male herring in cast nets"}
+# PWS hatchery harvest from Stopha:
+pws = data.frame("year"=1997:2015, "hatchery_harvest"= c(24686332,
+24760828,
+37968264,
+33040270,
+28466847,
+18771143,
+46935174,
+20422252,
+47620680,
+19835604,
+53461389,
+39783382,
+17225812,
+68047457,
+26362128,
+23390393,
+74616332,
+40921607,
+70375365))
+
+df = left_join(df, pws)
+
+ggplot(df[df$Gear=="Cast net",], aes(log(hatchery_harvest), pred)) + geom_point() + xlab("Ln (pink salmon hatchery harvest)") + ylab("Predicted male herring in cast nets") + geom_smooth(method="lm") + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+```
+
 
 ### Spatial comparison
 
