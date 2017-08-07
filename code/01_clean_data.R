@@ -10,6 +10,12 @@ d = d[which(d$Sex%in%c("Female","Male")),]
 # re-label females = 0, males = 1
 d$SEX = as.numeric(d$Sex) - 2 
 
+#d$day = unlist(lapply(strsplit(as.character(d$SDATE), "/"), getElement, 2))
+#d$month = unlist(lapply(strsplit(as.character(d$SDATE), "/"), getElement, 1))
+#d$year = unlist(lapply(strsplit(as.character(d$SDATE), "/"), getElement, 3))
+#d$daymonth = paste0(d$day,d$month)
+#apply(ceiling(table(d$daymonth, d$year)/1.0e10), 2, sum)
+
 # Split out the gear, location, and fishery from the filename code.
 d$FILENAME = as.character(d$FILENAME)
 # last 4 of code is FGLL, where F = fishery, G = gear, LL = location
