@@ -29,16 +29,18 @@ gearTime.model01 = glm(SEX ~ gear + as.factor(Year), family = "binomial", data=d
 gearTime.model02 = glm(SEX ~ gear + Year, family = "binomial", data=d)
 ```
 
-We can also try a few flavors of GAMs,
+We can also try a few versions of GAMs,
 
 ```{r}
 gam.model = gam(SEX ~ gear + s(Year), family = "binomial", data=d)
 gam.model.02 = gam(SEX ~ s(Year, by=as.factor(gear)), family = "binomial", data=d)
 ```
 
+Putting them all together in a list of models,
 ```{r, echo=FALSE}
 m = matrix(0, 6, 2)
 colnames(m) = c("Model", "AIC")
+
 m[,1] = c("Null", "Gear", "Gear, time (factor)", 
   "Gear, time (numeric)", "GAM s(year)", "GAM s(year, gear)")
 m[,2] = round(c(AIC(null.model), AIC(gear.model), 
@@ -46,6 +48,8 @@ m[,2] = round(c(AIC(null.model), AIC(gear.model),
   AIC(gam.model), AIC(gam.model.02)), 2)
 kable(m)
 ```
+
+
 
 Based on this table (lower AICs = better models) we'd say that the best model includes time as factor, but both that model and the model with the temporal trend are better than the model without time as a predictor. This model also does better than GAM models, with smooth terms (either shared, or by gear). To visualize what the sex ratio looks like, we can look at the output of a GAM. 
 
@@ -79,37 +83,6 @@ g1
 pdf("../figures/Figure 03.pdf")
 g1
 dev.off()
-
-```
-
-### Correlation with pink salmon
-
-```{r, echo=FALSE, fig.pos="placeHere", fig.cap="Correlation between ln(pink salmon harvest) and predicted male herring in cast nets"}
-# PWS hatchery harvest from Stopha:
-pws = data.frame("year"=1997:2015, "hatchery_harvest"= c(24686332,
-24760828,
-37968264,
-33040270,
-28466847,
-18771143,
-46935174,
-20422252,
-47620680,
-19835604,
-53461389,
-39783382,
-17225812,
-68047457,
-26362128,
-23390393,
-74616332,
-40921607,
-70375365))
-
-df = left_join(df, pws)
-
-ggplot(df[df$Gear=="Cast net",], aes(log(hatchery_harvest), pred)) + geom_point() + xlab("Ln (pink salmon hatchery harvest)") + ylab("Predicted male herring in cast nets") + geom_smooth(method="lm") + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
 ```
 
@@ -174,9 +147,10 @@ g$AGE = as.character(g$AGE)
 g = rbind(g, gtot)
 
 g1 = ggplot(g[g$AGE %in% c(seq(3,9), "All Ages"),], aes(Year, p, group=Gear, color=Gear)) + 
-  geom_line() + facet_wrap(~AGE, scale="free_y") + ylab("Proportion male") + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+  geom_line() + facet_wrap(~AGE) + ylab("Proportion male") + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
-  scale_color_manual(values=c("#043657", "#98c5ea"))
+  scale_color_manual(values=c("#043657", "#98c5ea")) + 
+  geom_hline(aes(yintercept = 0.5), linetype = "dashed", color = "red")
 
 pdf("../figures/SI Figure 04_rawproportions.pdf")
 g1

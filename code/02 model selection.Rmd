@@ -37,14 +37,47 @@ gam.model.02 = gam(SEX ~ s(Year, by=as.factor(gear)), family = "binomial", data=
 ```
 
 ```{r, echo=FALSE}
-m = matrix(0, 6, 2)
-colnames(m) = c("Model", "AIC")
-m[,1] = c("Null", "Gear", "Gear, time (factor)", 
-  "Gear, time (numeric)", "GAM s(year)", "GAM s(year, gear)")
-m[,2] = round(c(AIC(null.model), AIC(gear.model), 
-  AIC(gearTime.model01), AIC(gearTime.model02), 
-  AIC(gam.model), AIC(gam.model.02)), 2)
-kable(m)
+# gear is always factor, AGE is numeric, factor, smooth, Years is numeric / factor / smooth
+models = list()
+d$AGE = as.numeric(d$AGE)
+models[[1]] = glm(SEX ~ gear + AGE + as.factor(Year), family = "binomial", data=d)
+models[[2]] = glm(SEX ~ gear + as.factor(AGE) + as.factor(Year), family = "binomial", data=d)
+models[[3]] = gam(SEX ~ gear + s(AGE, k = 4) + as.factor(Year), family = "binomial", data=d)
+
+models[[4]] = glm(SEX ~ gear + AGE + as.numeric(Year), family = "binomial", data=d)
+models[[5]] = glm(SEX ~ gear + as.factor(AGE) + as.numeric(Year), family = "binomial", data=d)
+models[[6]] = gam(SEX ~ gear + s(AGE, k = 4) + as.numeric(Year), family = "binomial", data=d)
+
+models[[7]] = gam(SEX ~ gear + AGE + s(Year), family = "binomial", data=d)
+models[[8]] = gam(SEX ~ gear + as.factor(AGE) + s(Year), family = "binomial", data=d)
+models[[9]] = gam(SEX ~ gear + s(AGE, k = 4) + s(Year), family = "binomial", data=d)
+
+models[[10]] = glm(SEX ~ 1, family = "binomial", data=d)
+
+m = data.frame("Model" = "", 
+  "AIC" = unlist(lapply(models, getElement, "aic")),
+  stringsAsFactors = FALSE)
+m$Model[1] = "Gear, age, time(f)"
+m$Model[2] = "Gear, age(f), time(f)"
+m$Model[3] = "Gear, age(s), time(f)"
+m$Model[4] = "Gear, age, time"
+m$Model[5] = "Gear, age(f), time"
+m$Model[6] = "Gear, age(s), time"
+m$Model[7] = "Gear, age, time(s)"
+m$Model[8] = "Gear, age(f), time(s)"
+m$Model[9] = "Gear, age(s), time(s)"
+m$Model[10] = "Null"
+
+m$delta_aic = m$AIC - min(m$AIC)
+
+best_model = models[[which.min(m$delta_aic)]]
+
+m = dplyr::arrange(m, delta_aic)
+
+m_table = m
+m_table[,2] = round(m_table[,2], 2)
+m_table[,3] = round(m_table[,3], 2)
+kable(as.matrix(m_table))
 ```
 
 Based on this table (lower AICs = better models) we'd say that the best model includes time as factor, but both that model and the model with the temporal trend are better than the model without time as a predictor. This model also does better than GAM models, with smooth terms (either shared, or by gear). To visualize what the sex ratio looks like, we can look at the output of a GAM. 
@@ -53,9 +86,9 @@ Are these changes biologically meaningful? We can make predictions with a new da
 
 ```{r, fig.cap="Estimated percent male for PWS herring, for 2 gears sampling in spring (March - April). Estimates shown from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
 
-pred.C = predict(gearTime.model01, newdata = data.frame("Year"=1997:2015, "gear"="C"), 
+pred.C = predict(best_model, newdata = data.frame("Year"=1997:2015, "gear"="C", "AGE" = 5), 
   type="response", se.fit=TRUE)
-pred.P = predict(gearTime.model01, newdata = data.frame("Year"=1983:2015, "gear"="P"), 
+pred.P = predict(best_model, newdata = data.frame("Year"=1983:2015, "gear"="P", "AGE" = 5), 
   type="response", se.fit=TRUE)
 
 df_C = data.frame("year"=1997:2015, pred = pred.C$fit, low = pred.C$fit - 2*pred.C$se.fit, 
@@ -82,14 +115,45 @@ dev.off()
 
 ```
 
+```{r}
+
+pred.C = predict(best_model, newdata = data.frame("Year"=2005, "gear"="C", "AGE" = 3:11), 
+  type="response", se.fit=TRUE)
+pred.P = predict(best_model, newdata = data.frame("Year"=2005, "gear"="P", "AGE" = 3:11), 
+  type="response", se.fit=TRUE)
+
+df_C = data.frame("Age"=3:11, pred = pred.C$fit, low = pred.C$fit - 2*pred.C$se.fit, 
+  hi = pred.C$fit + 2*pred.C$se.fit, gear = "C", stringsAsFactors = FALSE)
+df_P = data.frame("Age"=3:11, pred = pred.P$fit, low = pred.P$fit - 2*pred.P$se.fit, 
+  hi = pred.P$fit + 2*pred.P$se.fit, gear = "P", stringsAsFactors = FALSE)  
+df = rbind(df_C, df_P)
+
+names(df)[which(names(df)=="gear")] = "Gear"
+df$Gear[which(df$Gear=="C")] = "Cast net"
+df$Gear[which(df$Gear=="P")] = "Purse seine"
+
+g1 = ggplot(df, aes(Age, pred, group = Gear)) + 
+  geom_line() + 
+  xlab("Age") + ylab("Predicted proportion of males") + scale_fill_manual(values=c("#043657", "#98c5ea")) + 
+  geom_ribbon(aes(ymin=low, ymax=hi, fill=Gear), alpha=0.8) +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+g1
+
+pdf("../figures/Figure 05.pdf")
+g1
+dev.off()
+```
+
+
 ### Year coefficients
 
 The year coefficients from the best model show an interesting pattern of oscillations over time, mostly between odd / even years. Extracting these coefficients,
 
 ```{r fig.cap="Estimated year coefficients from best-fit GLM (Table 1), where gear is treated as a factor/offset.", fig.pos="placeHere", echo=FALSE, warning=FALSE, message=FALSE, results="hide"}
-df = data.frame("Year"=1984:2015, "Effect"=summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1],
-  "Low" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] - 1*summary(gearTime.model01)$coefficients[-c(1:2),2],
-  "Hi" = summary(gearTime.model01)$coefficients[1,1] + summary(gearTime.model01)$coefficients[-c(1:2),1] + 1*summary(gearTime.model01)$coefficients[-c(1:2),2])
+df = data.frame("Year"=1984:2015, "Effect"=summary(best_model)$coefficients[1,1] + summary(best_model)$coefficients[-c(1:10),1],
+  "Low" = summary(best_model)$coefficients[1,1] + summary(best_model)$coefficients[-c(1:10),1] - 1*summary(best_model)$coefficients[-c(1:10),2],
+  "Hi" = summary(best_model)$coefficients[1,1] + summary(best_model)$coefficients[-c(1:10),1] + 1*summary(best_model)$coefficients[-c(1:10),2])
 
 g1 = ggplot(df, aes(Year, Effect)) + geom_line(color = "darkblue") + geom_point(color = "darkblue") +
   geom_ribbon(aes(ymin = Low, ymax = Hi), fill="darkblue", alpha=0.3) + 
@@ -120,9 +184,10 @@ g$AGE = as.character(g$AGE)
 g = rbind(g, gtot)
 
 g1 = ggplot(g[g$AGE %in% c(seq(3,9), "All Ages"),], aes(Year, p, group=Gear, color=Gear)) + 
-  geom_line() + facet_wrap(~AGE, scale="free_y") + ylab("Proportion male") + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+  geom_line() + facet_wrap(~AGE) + ylab("Proportion male") + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
-  scale_color_manual(values=c("#043657", "#98c5ea"))
+  scale_color_manual(values=c("#043657", "#98c5ea")) + 
+  geom_hline(aes(yintercept = 0.5), linetype="dashed", color = "red")
 
 pdf("../figures/SI Figure 04_rawproportions.pdf")
 g1
@@ -146,8 +211,8 @@ pws_hatch = data.frame("Year" = 1983:2014, "HatchRet" = c(4804043,
 
 pws_hatch$total = pws_hatch$WildEsc + pws_hatch$HatchRet
 # What we're really interested in are the relative year effects,
-year_effects = coef(gearTime.model01)[1] + 
-  coef(gearTime.model01)[grep("Year",names(coef(gearTime.model01)))]
+year_effects = coef(best_model)[1] + 
+  coef(best_model)[grep("Year",names(coef(best_model)))]
 plot(1984:2014, year_effects, type="l")
 
 # plot standardized estimates

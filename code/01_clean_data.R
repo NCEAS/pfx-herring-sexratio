@@ -38,11 +38,15 @@ d = d[d$fishery%in%c("Research"),] # only research samples
 
 round(table(d$gear) / sum(table(d$gear)), 2)
 
+Table_1 = table(d$Year, d$gear)
+
 # look at two dominant gears
 d = d[d$gear%in%c("C", "P"),] # cast, purse seine
 
-# only look at ages 1-11
-d = d[d$AGE %in% seq(1,11), ]
+
+
+# only look at ages 3-11
+d = d[d$AGE %in% seq(3,11), ]
 
 # temporally, we'll restrict the analysis to data from 1983 on. There's samples in 1976/1977, but very small, and the gap may affect the longer term trend.
 d = d[d$Year > 1982,]
