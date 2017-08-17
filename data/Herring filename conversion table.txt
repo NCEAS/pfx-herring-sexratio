@@ -1,0 +1,57 @@
+Table 2a.  Fishery, gear, age, sex, location codes, file naming conversions, and
+                  sample size requirements used for Herring AWL sampling in PWS.
+
+
+Title and File naming conversions (using codes below)
+
+Data file names:	(year) (log no.)  (Fishery)  (Gear)  (Location)
+			  YY	  ##	       F		G	LL
+
+
+Codes in filename:
+
+Fishery:           T 		Test Fishery      
+S		Commercial Sac Roe
+B		Commercial Food and Bait
+P		Pound	
+A		Acoustic Survey
+D		Disease sampling
+	
+ Gear:	P		Purse Seine
+G		Gillnet
+D                     Dip Net
+A                     Hand Picked
+H		Half Purse
+B		Beach Seine
+T		Trawl
+C		Cast Net
+
+Age:		1-15		Age in years
+18           	Regenerated
+19		Illegible
+20		Missing
+21 Wrong scale
+
+Sex:		1		Male
+      2		Female
+3		Unknown
+		
+Location:  (see Table 2b)
+
+
+Sample Size Requirements – 450 fish goal
+
+
+
+
+
+Table 2b.   Current valid location codes for PWS herring sampling locations:
+
+
+
+
+Location CodeLocationAreaARApplegate RocksMontagueBABay of IslesNakedBBBoulder BayNortheastBIBligh Island  NortheastBRBishop RockSouthwestBTBeartrap BaySoutheastBUBusby IslandNortheastCBCedar BayNorthshoreCCComfort CoveSoutheastCOColumbia BayNorthshoreCPCanoe PassSoutheastDBDrier BayW. Knight I.DPDangerous PassageW. Chenega I.          EAEaglek BayNorthshoreEPElrington PassSouthwestFBFairmont BayNorthshoreFHFish BayNortheastFIFairmont IslandNorthshoreGAGibbon AnchorageMontagueGBGalena BayNortheastGIGreen IslandMontagueGPGraveyard PointMontagueGRGranite BayNorthshoreGUGull IslandSoutheastGVGravina PointSoutheastHBHanning BayMontagueHEHerring BayNakedHHHell’s HoleSoutheastHUHumphries HoleSoutheastICIrish CoveNortheastJBJack BayNortheastJCJohnson CoveNortheastKHKnowles HeadSoutheastKIKayak IslandGulf of AlaskaLBLandlocked BayNortheastLGLong BayNorthshoreMAMain BayNorthwestMBMummy BayS. Knight I.MCMueller CoveNorthshoreLocation CodeLocationAreaMHMacleod HarborMontagueMIMontague IslandMontagueMXMixed LocationsMixedNCNorth ChenegaSouthwestNENortheast – General locationsNortheastNHNorth Hawkins Island ShoreSoutheastNINaked IslandNakedNSNorthshore - General locationsNorthshoreOBOlsen BaySoutheastOCOlsen CoveNorthshoreOIOlsen IslandNorthshorePBPaddy BayNakedCTPoint CountessSouthwestPCPort ChalmersMontaguePFPort FidalgoNortheastPGPort GravinaSoutheastPNPort Nellie JuanNakedPJPort San JuanMontaguePPPayday PointNorthshorePVPicnic CoveNortheastRBRocky BayMontagueRHRed HeadSoutheastRPRocky PointNortheastRSResurrection BaySewardSBSawmill BayNortheastSCSnug Corner CoveNortheastSESoutheast – General locationsSoutheastSHStockdale HarborMontagueSIStorey IslandNakedSMSt. Matthew’s BaySoutheastSNSimpson BaySoutheastSPSheep BaySoutheastSTShelter BaySouthwestSQSquire IslandSouthwestSUSunny BayNortheastTKTatitlek BayNortheastTMTwo Moon BayNortheastTSTwenty-seven MileCopper RiverUIUnakwik InletNorthshoreVAValdez ArmNortheastVBVirgin BayNortheastVZPort ValdezNortheastWBWells BayNorthshoreWHWhale BayMontagueLocation CodeLocationAreaWIWindy BaySoutheastWTWest BayNortheastZBZaikof BayMontague
+
+
+
+
